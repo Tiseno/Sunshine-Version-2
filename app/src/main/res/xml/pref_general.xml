@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditTextPreference
+        android:id="@+id/pref_lat"
+        android:title="@string/pref_location_label_lat"
+        android:key="@string/pref_location_key_lat"
+        android:defaultValue="@string/pref_location_default_lat"
+        android:inputType="numberDecimal"
+        />
+    <EditTextPreference
+        android:id="@+id/pref_long"
+        android:title="@string/pref_location_label_long"
+        android:key="@string/pref_location_key_long"
+        android:defaultValue="@string/pref_location_default_long"
+        android:inputType="numberDecimal"
+        />
+    <ListPreference
+        android:title="@string/pref_degree_unit_title"
+        android:key="@string/pref_degree_unit_key"
+        android:defaultValue="@string/pref_degree_unit_default"
+        android:entries="@array/pref_degree_unit_entries"
+        android:entryValues="@array/pref_degree_unit_value"
+        android:summary="%s"/>
+</PreferenceScreen>

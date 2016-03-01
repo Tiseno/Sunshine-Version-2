@@ -1,5 +1,9 @@
 package com.example.android.sunshine.app;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -35,6 +39,19 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        } else if (id == R.id.action_location) {
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_VIEW);
+
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+            String lat = sharedPreferences.getString(getString(R.string.pref_location_key_lat), getString(R.string.pref_location_default_lat));
+            String lon = sharedPreferences.getString(getString(R.string.pref_location_key_long), getString(R.string.pref_location_default_long));
+
+            intent.setData(Uri.parse("geo:" + lat + "," + lon));
+            startActivity(intent);
             return true;
         }
 

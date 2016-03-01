@@ -1,9 +1,13 @@
 package com.example.android.sunshine.app;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.IntegerRes;
 import android.text.format.Time;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,6 +26,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,17 +54,28 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        updateWeatherData();
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.forecastfragment, menu);
     }
 
+    private void updateWeatherData() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String lat = sharedPreferences.getString(getString(R.string.pref_location_key_lat), getString(R.string.pref_location_default_lat));
+        String lon = sharedPreferences.getString(getString(R.string.pref_location_key_long), getString(R.string.pref_location_default_long));
+        FetchWeatherTask fetchWeatherTask = new FetchWeatherTask(Double.parseDouble(lat), Double.parseDouble(lon));
+        fetchWeatherTask.execute();
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item.getItemId() == R.id.action_refresh) {
-            FetchWeatherTask fetchWeatherTask = new FetchWeatherTask(59.53, 18.09);
-            fetchWeatherTask.execute();
-
+            updateWeatherData();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -87,10 +103,13 @@ public class ForecastFragment extends Fragment {
         ListView lv = (ListView) rootView.findViewById(R.id.listview_forecast);
         lv.setAdapter(forecastAdapter);
 
+
         lv.setOnItemClickListener(new ListView.OnItemClickListener() {
               @Override
               public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                  Toast.makeText(getActivity().getApplicationContext(), "This is a muddafucking toast", Toast.LENGTH_SHORT).show();
+                  String forecast = forecastAdapter.getItem(i);
+                  Intent intent = new Intent(getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT, forecast);
+                  startActivity(intent);
               }
           });
         return rootView;
@@ -119,11 +138,13 @@ public class ForecastFragment extends Fragment {
                 Uri.Builder uri = new Uri.Builder();
                 uri.scheme("http").authority("api.openweathermap.org").appendPath("data").appendPath("2.5").appendPath("forecast")
                         .appendQueryParameter("mode", "json")
-                        .appendQueryParameter("units", "metric")
                         .appendQueryParameter("cnt", "7")
                         .appendQueryParameter("appid", "a1205a5df186916a78fe44a4705ca2a6")
                         .appendQueryParameter("lat", String.valueOf(latitude))
                         .appendQueryParameter("lon", String.valueOf(longitude));
+
+
+                Log.e(LOG_TAG, uri.build().toString());
 
                 URL url = new URL(uri.build().toString());
 
@@ -189,7 +210,27 @@ public class ForecastFragment extends Fragment {
             for(int i = 0; i < numDays; i++) {
                 JSONObject current = list.getJSONObject(i);
 
-                String temp = (current.getJSONObject("main").getDouble("temp_min")) + "/" + (current.getJSONObject("main").getDouble("temp_max"));
+
+                double min = current.getJSONObject("main").getDouble("temp_min");
+                double max = current.getJSONObject("main").getDouble("temp_max");
+
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                int unit = Integer.parseInt(sharedPreferences.getString(getString(R.string.pref_degree_unit_key), getString(R.string.pref_degree_unit_default)));
+
+                if(unit == 0) {
+                    // Kelvin is default
+                } else if(unit == 1) {
+                    // Metric
+                    min = min - 273.15;
+                    max = max - 273.15;
+                } else if(unit == 2) {
+                    // Imperial
+                    min = (min - 273.15) * 1.8 + 32.0;
+                    max = (max - 273.15) * 1.8 + 32.0;
+                }
+
+                DecimalFormat df = new DecimalFormat("#.#");
+                String temp = df.format(min) + "/" + df.format(max);
 
                 String description = current.getJSONArray("weather").getJSONObject(0).getString("description");
 
